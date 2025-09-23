@@ -1,32 +1,25 @@
 name: CI Pipeline
 
-on: [push]
+on:
+  push:
+    branches: [ main ]  # or the branch you want to trigger on
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    services:
-      # Add Chrome browser service for Selenium tests
-      chrome:
-        image: selenium/standalone-chrome:latest
-        options: --shm-size="2g"
-        ports:
-          - 4444:4444
 
     steps:
+      # Step 1: Checkout code
       - uses: actions/checkout@v4
 
+      # Step 2: Set up Java
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'maven'
 
-      - name: Build
-        run: mvn clean install -DskipTests
+      # Step 3: Build the project
+      - run: mvn clean install
 
-      - name: Run Tests
-        run: mvn test -Dspring.profiles.active=test -Dselenium.browser=chrome -Dselenium.remote=true -Dwebdriver.remote.url=http://localhost:4444/wd/hub
-        env:
-          SPRING_SECURITY_USER_NAME: user
-          SPRING_SECURITY_USER_PASSWORD: user
+      # Step 4: Run tests
+      - run: mvn test
