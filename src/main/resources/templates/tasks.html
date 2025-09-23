@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe , Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .add-task {
+            display: flex;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #addTaskBtn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #addTaskBtn:hover {
+            background: #45a049;
+        }
+
+        .task-list {
+            list-style-type: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .task-checkbox {
+            margin-right: 15px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #ff3742;
+        }
+
+        .logout-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #ff3742;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Todo List</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <form th:action="@{/add}" method="post" class="add-task">
+        <input type="text" id="taskInput" name="description" placeholder="Add a new task..." required>
+        <button type="submit" id="addTaskBtn">Add Task</button>
+    </form>
+
+    <ul class="task-list" id="taskList">
+        <li th:each="task : ${tasks}" class="task-item" th:classappend="${task.completed} ? 'completed' : ''">
+            <input type="checkbox" class="task-checkbox" th:checked="${task.completed}"
+                   th:data-task-id="${task.id}" onchange="toggleTask(this)">
+            <span class="task-text" th:text="${task.description}"></span>
+            <form th:action="@{/delete/{id}(id=${task.id})}" method="post" style="display: inline;">
+                <button type="submit" class="delete-btn">Delete</button>
+            </form>
+        </li>
+    </ul>
+</div>
+
+<script>
+function toggleTask(checkbox) {
+    const taskId = checkbox.getAttribute('data-task-id');
+    fetch(`/toggle/${taskId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).then(response => {
+        if (response.ok) {
+            const taskItem = checkbox.closest('.task-item');
+            taskItem.classList.toggle('completed', checkbox.checked);
+        } else {
+            checkbox.checked = !checkbox.checked;
+            alert('Failed to update task status');
+        }
+    }).catch(error => {
+        checkbox.checked = !checkbox.checked;
+        console.error('Error:', error);
+        alert('Failed to update task status');
+    });
+}
+</script>
+</body>
+</html>
