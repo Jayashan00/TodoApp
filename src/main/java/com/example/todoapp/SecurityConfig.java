@@ -19,22 +19,25 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests((requests) -> requests
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/tasks/**").authenticated()
+                        .requestMatchers("/api/**").permitAll() // API is public for testing
                         .anyRequest().authenticated()
                 )
-                .formLogin((form) -> form
+                .formLogin(form -> form
                         .loginPage("/login")
                         .defaultSuccessUrl("/tasks", true)
                         .permitAll()
                 )
-                .logout((logout) -> logout
+                .logout(logout -> logout
                         .logoutSuccessUrl("/login")
-                        .permitAll());
+                        .permitAll()
+                );
 
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

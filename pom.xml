@@ -134,6 +134,13 @@
             <version>5.10.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+
 
         <!-- Hamcrest matchers for REST Assured -->
         <dependency>
