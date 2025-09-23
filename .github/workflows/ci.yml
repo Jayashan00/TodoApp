@@ -1,8 +1,9 @@
 name: CI Pipeline
 
+# Workflow to build and test the Todo application
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]  # Support both branch names during transition
 
 jobs:
   build:
