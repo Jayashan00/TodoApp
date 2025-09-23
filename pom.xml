@@ -127,6 +127,7 @@
         </dependency>
 
 
+
         <!-- Explicit JUnit 5 for REST Assured / Selenium -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
