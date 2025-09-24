@@ -31,8 +31,6 @@ jobs:
           cache: 'maven'
 
       - name: Run Tests
-        run: mvn verify \
-          -Dspring.profiles.active=test \
-          -Dselenium.remote=true \
-          -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL} \
-          -Dapp.baseUrl=${APP_BASE_URL}
+        run: |
+          mvn verify -Dspring.profiles.active=test -Dselenium.remote=true -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL} -Dapp.baseUrl=${APP_BASE_URL}
+      
