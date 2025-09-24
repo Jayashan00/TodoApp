@@ -23,6 +23,12 @@ jobs:
       - name: Build project (skip tests)
         run: mvn clean package -DskipTests
 
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: todoapp-jar
+          path: target/*.jar
+
   start-app:
     runs-on: ubuntu-latest
     needs: build
@@ -41,8 +47,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: todoapp-jar
+          path: target/
+
       - name: Start Spring Boot app
         run: |
+          mkdir -p target
           JAR_FILE=$(ls target/*.jar | grep -v "original" | head -n 1)
           echo "Starting $JAR_FILE..."
           nohup java -jar $JAR_FILE --spring.profiles.active=test > target/spring.log 2>&1 &
@@ -87,24 +100,3 @@ jobs:
             -Dselenium.remote=true \
             -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL} \
             -Dapp.baseUrl=${APP_BASE_URL}
-
-  analysis:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run static code analysis
-        run: mvn checkstyle:check || true
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: analysis
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to production
-        run: echo "🚀 Deployment step placeholder"
-        # Replace with your deploy commands (Heroku, Docker, etc.)
