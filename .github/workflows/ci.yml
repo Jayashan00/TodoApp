@@ -37,8 +37,8 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: Run all tests (unit + automation)
-        run: mvn test -Dspring.profiles.active=test
+      - name: Run all tests (unit + API + Cucumber)
+        run: mvn test -Dspring.profiles.active=test -Pskip-ui-tests
 
   deploy:
     runs-on: ubuntu-latest

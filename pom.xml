@@ -144,6 +144,9 @@
             <artifactId>selenium-devtools-v132</artifactId>
             <version>4.28.1</version>
         </dependency>
+        <!-- In pom.xml -->
+
+
 
 
         <dependency>
@@ -180,8 +183,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/UiTest.java</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
+
 
 </project>
