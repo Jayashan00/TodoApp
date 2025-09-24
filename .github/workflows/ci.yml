@@ -1,38 +1,45 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: maven
+
+      - name: Build project (skip tests)
+        run: mvn clean package -DskipTests
+
+  start-app:
+    runs-on: ubuntu-latest
+    needs: build
     services:
       chrome:
         image: selenium/standalone-chrome:latest
         options: --shm-size="2g"
         ports:
           - 4444:4444
-
     env:
       SPRING_SECURITY_USER_NAME: user
       SPRING_SECURITY_USER_PASSWORD: user
       APP_BASE_URL: http://localhost:8080
       SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
-
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Build project
-        run: mvn clean package -DskipTests
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Start Spring Boot app
         run: |
@@ -40,7 +47,7 @@ jobs:
           echo "Starting $JAR_FILE..."
           nohup java -jar $JAR_FILE --spring.profiles.active=test > target/spring.log 2>&1 &
 
-          echo "Waiting for Spring Boot app to be ready..."
+          echo "Waiting for app to start..."
           for i in {1..60}; do
             if curl -s http://localhost:8080/actuator/health | grep '"status":"UP"' > /dev/null; then
               echo "App is up!"
@@ -54,11 +61,50 @@ jobs:
             cat target/spring.log
             exit 1
           fi
-      
 
-      - name: Run tests
-        run: mvn test -Dspring.profiles.active=test \
-          -Dselenium.remote=true \
-          -Dwebdriver.remote.url=http://localhost:4444/wd/hub \
-          -Dapp.baseUrl=http://localhost:8080
+  test:
+    runs-on: ubuntu-latest
+    needs: start-app
+    env:
+      SPRING_SECURITY_USER_NAME: user
+      SPRING_SECURITY_USER_PASSWORD: user
+      APP_BASE_URL: http://localhost:8080
+      SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: maven
+
+      - name: Run all tests (unit, Cucumber, UI)
+        run: |
+          mvn test -Dspring.profiles.active=test \
+            -Dselenium.remote=true \
+            -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL} \
+            -Dapp.baseUrl=${APP_BASE_URL}
+
+  analysis:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run static code analysis
+        run: mvn checkstyle:check || true
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: analysis
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: echo "🚀 Deployment step placeholder"
+        # Replace with your deploy commands (Heroku, Docker, etc.)
