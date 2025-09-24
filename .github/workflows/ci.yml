@@ -20,69 +20,12 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: Build project (skip tests)
+      - name: Build project
         run: mvn clean package -DskipTests
-
-      - name: Upload JAR artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: todoapp-jar
-          path: target/*.jar
-
-  start-app:
-    runs-on: ubuntu-latest
-    needs: build
-    services:
-      chrome:
-        image: selenium/standalone-chrome:latest
-        options: --shm-size="2g"
-        ports:
-          - 4444:4444
-    env:
-      SPRING_SECURITY_USER_NAME: user
-      SPRING_SECURITY_USER_PASSWORD: user
-      APP_BASE_URL: http://localhost:8080
-      SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download JAR artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: todoapp-jar
-          path: target/
-
-      - name: Start Spring Boot app
-        run: |
-          mkdir -p target
-          JAR_FILE=$(ls target/*.jar | grep -v "original" | head -n 1)
-          echo "Starting $JAR_FILE..."
-          nohup java -jar $JAR_FILE --spring.profiles.active=test > target/spring.log 2>&1 &
-
-          echo "Waiting for app to start..."
-          for i in {1..60}; do
-            if curl -s http://localhost:8080/actuator/health | grep '"status":"UP"' > /dev/null; then
-              echo "App is up!"
-              break
-            fi
-            sleep 2
-          done
-
-          if ! curl -s http://localhost:8080/actuator/health | grep '"status":"UP"'; then
-            echo "App failed to start"
-            cat target/spring.log
-            exit 1
-          fi
 
   test:
     runs-on: ubuntu-latest
-    needs: start-app
-    env:
-      SPRING_SECURITY_USER_NAME: user
-      SPRING_SECURITY_USER_PASSWORD: user
-      APP_BASE_URL: http://localhost:8080
-      SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+    needs: build
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -94,9 +37,13 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: Run all tests (unit, Cucumber, UI)
-        run: |
-          mvn test -Dspring.profiles.active=test \
-            -Dselenium.remote=true \
-            -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL} \
-            -Dapp.baseUrl=${APP_BASE_URL}
+      - name: Run all tests (unit + automation)
+        run: mvn test -Dspring.profiles.active=test
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Deploy to production
+        run: echo "🚀 Deployment placeholder"
+        # Replace with your deploy command
