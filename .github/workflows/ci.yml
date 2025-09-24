@@ -20,7 +20,7 @@ jobs:
       SPRING_SECURITY_USER_NAME: user
       SPRING_SECURITY_USER_PASSWORD: user
       APP_BASE_URL: http://localhost:8080
-      SELENIUM_REMOTE_URL: http://chrome:4444/wd/hub
+      SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
 
     steps:
       - uses: actions/checkout@v4
@@ -36,12 +36,12 @@ jobs:
 
       - name: Start Spring Boot app
         run: |
-          mkdir -p target
           JAR_FILE=$(ls target/*.jar | grep -v "original" | head -n 1)
           echo "Starting $JAR_FILE..."
           nohup java -jar $JAR_FILE --spring.profiles.active=test > target/spring.log 2>&1 &
 
-          echo "Waiting for app to start..."
+          # Wait for app to start
+          echo "Waiting for Spring Boot app..."
           for i in {1..60}; do
             if curl -s http://localhost:8080/actuator/health | grep '"status":"UP"' > /dev/null; then
               echo "App is up!"
@@ -58,6 +58,5 @@ jobs:
 
       - name: Run tests
         run: mvn test -Dspring.profiles.active=test \
-          -Dselenium.remote=true \
-          -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL} \
+          -Dselenium.remote=false \
           -Dapp.baseUrl=${APP_BASE_URL}
