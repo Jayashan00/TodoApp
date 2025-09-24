@@ -1,9 +1,8 @@
 name: CI Pipeline
 
-# Workflow to build and test the Todo application
 on:
   push:
-    branches: [ main, master ]  # Support both branch names during transition
+    branches: [ main, master ]
 
 jobs:
   build:
@@ -16,27 +15,24 @@ jobs:
         ports:
           - 4444:4444
 
+    env:
+      SPRING_SECURITY_USER_NAME: user
+      SPRING_SECURITY_USER_PASSWORD: user
+      APP_BASE_URL: http://localhost:8080
+      SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+
     steps:
-      # Step 1: Checkout code
       - uses: actions/checkout@v4
 
-      # Step 2: Set up Java
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
 
-      # Step 3: Start Spring Boot application
-      - name: Start Spring Boot application
-        run: |
-          nohup mvn spring-boot:run &
-          echo "Waiting for app to start..."
-          sleep 30
-
-      # Step 4: Run Tests
       - name: Run Tests
-        run: mvn test -Dspring.profiles.active=test -Dselenium.browser=chrome -Dselenium.remote=true -Dwebdriver.remote.url=http://localhost:4444/wd/hub
-        env:
-          SPRING_SECURITY_USER_NAME: user
-          SPRING_SECURITY_USER_PASSWORD: user
+        run: mvn verify \
+          -Dspring.profiles.active=test \
+          -Dselenium.remote=true \
+          -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL} \
+          -Dapp.baseUrl=${APP_BASE_URL}
