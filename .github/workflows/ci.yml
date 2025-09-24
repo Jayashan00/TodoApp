@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      chrome:
+      selenium:
         image: selenium/standalone-chrome:latest
         options: --shm-size="2g"
         ports:
@@ -19,6 +19,7 @@ jobs:
       SPRING_SECURITY_USER_NAME: user
       SPRING_SECURITY_USER_PASSWORD: user
       APP_BASE_URL: http://localhost:8080
+      SELENIUM_REMOTE: true
       SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
 
     steps:
@@ -30,7 +31,22 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run Tests
+      - name: Build and Start Spring Boot
         run: |
-          mvn verify -Dspring.profiles.active=test -Dselenium.remote=true -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL} -Dapp.baseUrl=${APP_BASE_URL}
-      
+          nohup mvn spring-boot:run -Dspring-boot.run.profiles=test > target/spring.log 2>&1 &
+          echo "Waiting for app to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/actuator/health | grep '"status":"UP"' > /dev/null; then
+              echo "App is up!"
+              break
+            fi
+            sleep 2
+          done
+          if ! curl -s http://localhost:8080/actuator/health | grep '"status":"UP"'; then
+            echo "App failed to start"
+            cat target/spring.log
+            exit 1
+          fi
+
+      - name: Run Tests
+        run: mvn test -Dspring.profiles.active=test -Dapp.baseUrl=${APP_BASE_URL} -Dselenium.remote=${SELENIUM_REMOTE} -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL}
