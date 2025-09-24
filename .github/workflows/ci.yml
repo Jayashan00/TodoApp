@@ -33,7 +33,15 @@ jobs:
 
       - name: Build and Start Spring Boot
         run: |
-          nohup mvn spring-boot:run -Dspring-boot.run.profiles=test > target/spring.log 2>&1 &
+          # Make sure target directory exists
+          mkdir -p target
+
+          # Build the app first
+          mvn clean package -DskipTests
+
+          # Start the app with test profile
+          nohup java -jar target/*SNAPSHOT.jar --spring.profiles.active=test > target/spring.log 2>&1 &
+
           echo "Waiting for app to start..."
           for i in {1..30}; do
             if curl -s http://localhost:8080/actuator/health | grep '"status":"UP"' > /dev/null; then
@@ -42,11 +50,13 @@ jobs:
             fi
             sleep 2
           done
+
           if ! curl -s http://localhost:8080/actuator/health | grep '"status":"UP"'; then
             echo "App failed to start"
             cat target/spring.log
             exit 1
           fi
+      
 
       - name: Run Tests
         run: mvn test -Dspring.profiles.active=test -Dapp.baseUrl=${APP_BASE_URL} -Dselenium.remote=${SELENIUM_REMOTE} -Dwebdriver.remote.url=${SELENIUM_REMOTE_URL}
