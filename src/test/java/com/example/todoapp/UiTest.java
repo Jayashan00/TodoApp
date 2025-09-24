@@ -20,18 +20,21 @@ public class UiTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        String remoteUrl = System.getProperty("webdriver.remote.url", "http://localhost:4444/wd/hub");
+        // Determine if running against remote Selenium (e.g., GitHub Actions container)
         boolean isRemote = Boolean.parseBoolean(System.getProperty("selenium.remote", "false"));
+        String remoteUrl = System.getProperty("webdriver.remote.url", "http://localhost:4444/wd/hub");
         baseUrl = System.getProperty("app.baseUrl", "http://localhost:8080");
 
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless=new");
+        options.addArguments("--headless=new"); // Headless for CI
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
 
         if (isRemote) {
+            // Connect to remote Selenium container
             driver = new RemoteWebDriver(new URL(remoteUrl), options);
         } else {
+            // Use local ChromeDriver
             WebDriverManager.chromedriver().setup();
             driver = new ChromeDriver(options);
         }
@@ -45,15 +48,22 @@ public class UiTest {
         driver.findElement(By.name("password"))
                 .sendKeys(System.getProperty("spring.security.user.password", "user"));
         driver.findElement(By.tagName("button")).click();
+
+        // Assert that login redirects to /tasks
         assertTrue(driver.getCurrentUrl().contains("/tasks"),
                 "Login failed — current URL: " + driver.getCurrentUrl());
     }
 
     @Test
     public void testAddItem() {
+        // Reuse login
         testLogin();
+
+        // Add a task
         driver.findElement(By.name("description")).sendKeys("Selenium Task");
         driver.findElement(By.id("addTaskBtn")).click();
+
+        // Verify task appears on the page
         assertTrue(driver.getPageSource().contains("Selenium Task"),
                 "Task not found in page source!");
     }

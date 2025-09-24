@@ -40,8 +40,7 @@ jobs:
           echo "Starting $JAR_FILE..."
           nohup java -jar $JAR_FILE --spring.profiles.active=test > target/spring.log 2>&1 &
 
-          # Wait for app to start
-          echo "Waiting for Spring Boot app..."
+          echo "Waiting for Spring Boot app to be ready..."
           for i in {1..60}; do
             if curl -s http://localhost:8080/actuator/health | grep '"status":"UP"' > /dev/null; then
               echo "App is up!"
@@ -55,8 +54,11 @@ jobs:
             cat target/spring.log
             exit 1
           fi
+      
 
       - name: Run tests
         run: mvn test -Dspring.profiles.active=test \
-          -Dselenium.remote=false \
-          -Dapp.baseUrl=${APP_BASE_URL}
+          -Dselenium.remote=true \
+          -Dwebdriver.remote.url=http://localhost:4444/wd/hub \
+          -Dapp.baseUrl=http://localhost:8080
+
