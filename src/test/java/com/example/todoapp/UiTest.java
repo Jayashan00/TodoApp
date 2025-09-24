@@ -45,7 +45,8 @@ public class UiTest {
         driver.findElement(By.name("password"))
                 .sendKeys(System.getProperty("spring.security.user.password", "user"));
         driver.findElement(By.tagName("button")).click();
-        assertTrue(driver.getCurrentUrl().contains("/tasks"));
+        assertTrue(driver.getCurrentUrl().contains("/tasks"),
+                "Login failed — current URL: " + driver.getCurrentUrl());
     }
 
     @Test
@@ -53,7 +54,8 @@ public class UiTest {
         testLogin();
         driver.findElement(By.name("description")).sendKeys("Selenium Task");
         driver.findElement(By.id("addTaskBtn")).click();
-        assertTrue(driver.getPageSource().contains("Selenium Task"));
+        assertTrue(driver.getPageSource().contains("Selenium Task"),
+                "Task not found in page source!");
     }
 
     @AfterEach
